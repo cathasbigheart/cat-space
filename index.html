@@ -324,7 +324,7 @@ tabs.forEach(b=>{
   }
 });
 
-// ---- ALWAYS-4 SPARK TRAIL (never stops) ----
+// ---- 4-SPARK TRAIL (slightly more visible) ----
 const c = document.getElementById("sparkleCanvas");
 const ctx = c.getContext("2d", { alpha: true });
 
@@ -342,7 +342,6 @@ resize();
 let mx = innerWidth/2, my = innerHeight/2;
 let lastSpawn = 0;
 
-// exactly 4 sparks, recycle the oldest
 const sparks = [];
 const MAX = 4;
 
@@ -351,7 +350,7 @@ addEventListener("mousemove", (e)=>{
   my = e.clientY;
 
   const now = performance.now();
-  if(now - lastSpawn > 30){ // normal speed (lower = more)
+  if(now - lastSpawn > 28){ // normal speed
     spawn(mx, my);
     lastSpawn = now;
   }
@@ -361,13 +360,12 @@ function spawn(x,y){
   const s = {
     x, y,
     life: 0,
-    ttl: 80
+    ttl: 85
   };
 
   if(sparks.length < MAX) sparks.push(s);
   else {
-    // replace oldest spark (index 0)
-    sparks.shift();
+    sparks.shift(); // recycle oldest
     sparks.push(s);
   }
 }
@@ -375,6 +373,7 @@ function spawn(x,y){
 function tick(){
   ctx.clearRect(0,0,innerWidth,innerHeight);
 
+  // makes them pop a little more on video backgrounds
   ctx.globalCompositeOperation = "lighter";
 
   for(let i=0;i<sparks.length;i++){
@@ -382,15 +381,15 @@ function tick(){
     s.life++;
 
     const a = Math.max(0, 1 - s.life/s.ttl);
-    const r = 1.8 + (s.life/35);
+    const r = 2.2 + (s.life/28); // <-- slightly bigger growth
 
-    ctx.fillStyle = `rgba(200,221,245,${a * 0.9})`;
+    // slightly brighter cloud color
+    ctx.fillStyle = `rgba(200,221,245,${a * 1.05})`;
     ctx.beginPath();
     ctx.arc(s.x, s.y, r, 0, Math.PI*2);
     ctx.fill();
   }
 
-  // remove dead sparks (extra safety)
   for(let i=sparks.length-1;i>=0;i--){
     if(sparks[i].life >= sparks[i].ttl) sparks.splice(i,1);
   }
@@ -403,5 +402,6 @@ tick();
 
 </body>
 </html>
+
 
 
