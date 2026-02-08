@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Cat — cowboy in space</title>
+
+<style>
+:root{
+  --cosmic-ink:   #0b1838;
+  --twilight:     #4d4177;
+  --deep-sky:     #3a60a0;
+  --milky:        #88a5e0;
+  --cloud:        #c8ddf5;
+
+  --paper:  rgba(200, 221, 245, .92);
+  --paper2: rgba(200, 221, 245, .78);
+
+  --ink:    #0b1838;
+  --muted:  rgba(11, 24, 56, .72);
+  --line:   rgba(11, 24, 56, .18);
+  --shadow: 0 24px 70px rgba(11,24,56,.45);
+
+  --tab:  rgba(77, 65, 119, .75);
+  --tab2: rgba(136, 165, 224, .45);
+}
+
+*{box-sizing:border-box;}
+html,body{height:100%;}
+
+body{
+  margin:0;
+  font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+  color: var(--ink);
+  display:grid;
+  place-items:center;
+  padding:22px;
+  cursor: default;
+  min-height:100vh;
+}
+
+/* MP4 background */
+#bgVideo{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:-2;
+}
+
+#bgOverlay{
+  position:fixed;
+  inset:0;
+  background: linear-gradient(
+    rgba(11,24,56,.35),
+    rgba(77,65,119,.18)
+  );
+  z-index:-1;
+}
+
+/* canvas for cursor */
+#sparkleCanvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  z-index:9999;
+}
+
+/* card container */
+.wrap{
+  width:min(860px,100%);
+  filter:drop-shadow(var(--shadow));
+}
+
+.card{
+  position:relative;
+  border-radius:20px;
+  background:var(--paper);
+  border:1px solid var(--line);
+  backdrop-filter:blur(10px);
+  overflow:hidden;
+}
+
+/* header */
+.header{
+  padding:22px 22px 10px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+
+.pfp{
+  width:78px;
+  height:78px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  position:relative;
+  overflow:visible;
+  z-index: 10;
+
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.85), transparent 55%),
+    url("./icon.jpg") center/cover no-repeat;
+}
+
+/* BIGGER, cleaner orbit ring */
+.pfp .ring{
+  position:absolute;
+  left:50%;
+  top:50%;
+
+  /* bigger than before so it sits nicely around the head */
+  width: 200px;
+  height: auto;
+
+  transform: translate(-50%,-50%) rotate(-18deg);
+  pointer-events:none;
+
+  z-index: 9999;
+  filter: drop-shadow(0 0 14px rgba(200,221,245,.45));
+}
+
+
+h1{margin:0;font-size:44px;line-height:1;color:var(--cosmic-ink);}
+
+.sub{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:14px;
+  font-family:ui-sans-serif,system-ui,sans-serif;
+}
+
+/* tabs */
+.tabs{
+  padding:8px 18px 16px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.tab{
+  border:1px solid var(--line);
+  background:var(--tab2);
+  color:var(--cosmic-ink);
+  padding:10px 16px;
+  border-radius:12px;
+  cursor:pointer;
+  font-family:ui-sans-serif,system-ui,sans-serif;
+}
+
+.tab[aria-selected="true"]{
+  background:var(--tab);
+  color:white;
+}
+
+/* layout */
+.content{padding:0 22px 22px;}
+.panel{display:none;}
+.panel.active{display:block;}
+
+.grid{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:18px;
+}
+@media(max-width:780px){
+  .grid{grid-template-columns:1fr;}
+}
+
+/* boxes */
+.box{
+  background: linear-gradient(
+    180deg,
+    rgba(200,221,245,.85),
+    rgba(136,165,224,.55)
+  );
+  border:1px solid rgba(58,96,160,.35);
+  border-radius:16px;
+  padding:16px;
+}
+
+/* cat panel image */
+.art{
+  width:100%;
+  min-height:280px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:rgba(255,255,255,.22);
+}
+.art img{
+  width:100%;
+  max-height:360px;
+  object-fit:contain;
+  object-position:center;
+  padding:10px;
+}
+
+/* buttons */
+.btn{
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.35);
+  padding:10px 14px;
+  border-radius:12px;
+  text-decoration:none;
+  color:var(--ink);
+  font-family:ui-sans-serif,system-ui,sans-serif;
+}
+
+/* inbox form */
+form{display:grid;gap:10px;margin-top:10px;}
+input,textarea{
+  width:100%;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.45);
+}
+textarea{min-height:120px;}
+.hp{display:none;}
+</style>
+</head>
+
+<body>
+
+<video id="bgVideo" autoplay muted loop playsinline>
+  <source src="./bg.mp4" type="video/mp4">
+</video>
+<div id="bgOverlay"></div>
+
+
+<div class="wrap">
+<div class="card">
+
+<header class="header">
+  <div class="pfp">
+  <img class="ring" src="./ring.png" alt="" />
+</div>
+  <div>
+    <h1>Title Here</h1>
+    <p class="sub">insert subheader here • links • vibes</p>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab" aria-selected="true" data-tab="home">Home</button>
+  <button class="tab" aria-selected="false" data-tab="about">About</button>
+  <button class="tab" aria-selected="false" data-tab="inbox">Inbox / Q&A</button>
+</div>
+
+<div class="content">
+
+<section class="panel active" id="home">
+<div class="grid">
+<div class="box">
+<p>
+<strong>Welcome!</strong><br>
+This is my tiny corner of the internet. I write on AO3 and collect tropes like shiny rocks.
+</p>
+
+<div style="display:flex;gap:8px;flex-wrap:wrap;">
+<a class="btn" href="https://archiveofourown.org/users/YOUR_AO3_USERNAME" target="_blank">AO3</a>
+<a class="btn" href="https://archiveofourown.org/users/YOUR_AO3_USERNAME/works" target="_blank">Works</a>
+</div>
+</div>
+
+<aside class="box">
+  <div class="art">
+    <img src="./cat.png" alt="cat panel"/>
+  </div>
+</aside>
+</div>
+</section>
+
+<section class="panel" id="about">
+<div class="grid">
+<div class="box">
+<p>
+<strong>About me</strong><br>
+Name: Cat<br>
+Writes: your genres here<br>
+Loves: your things here
+</p>
+</div>
+
+<aside class="box">
+<div class="art">
+  <img src="./cat.png" alt="cat panel"/>
+</div>
+</aside>
+</div>
+</section>
+
+<section class="panel" id="inbox">
+<div class="box">
+<p><strong>Inbox / Q&A</strong><br>
+Send a message — anonymous is fine.</p>
+
+<form action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+<div class="hp"><input name="website"/></div>
+<input name="name" placeholder="Name (optional)"/>
+<textarea name="message" placeholder="Write your message..."></textarea>
+<button class="btn" type="submit">Send</button>
+</form>
+</div>
+</section>
+
+</div>
+</div>
+</div>
+
+<script>
+// ---- TABS ----
+const tabs=document.querySelectorAll(".tab");
+const panels=document.querySelectorAll(".panel");
+tabs.forEach(b=>{
+  b.onclick=()=>{
+    tabs.forEach(t=>t.setAttribute("aria-selected","false"));
+    b.setAttribute("aria-selected","true");
+    panels.forEach(p=>p.classList.remove("active"));
+    document.getElementById(b.dataset.tab).classList.add("active");
+  }
+});
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
